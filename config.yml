@@ -1,0 +1,9 @@
+---
+dbUser: admin
+dbPass: admin
+dbPort: 127.0.0.1:27017
+dbName: Magic:The-Gathering-Archive
+dbCollectionAllcards: allCards
+dbCollectionMycards: myCards
+dbCollectionSetimages: imgInfo
+dbCollectionSetNames: setNames
