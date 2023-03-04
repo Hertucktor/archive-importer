@@ -13,7 +13,8 @@ func ImportCardsIntoDatabase(dbClient *mongo.Client, conf config.Config, page, d
 
 	logger.Infof("Start of import: %v", time.Now())
 	for delimiter != 0 {
-		requestAllCards, err := RequestAllCardsFromAPI(page, logger)
+		//TODO: handle http status code != 200
+		_, requestAllCards, err := RequestAllCardsFromAPI(page, logger)
 		if err != nil {
 			return err
 		}
