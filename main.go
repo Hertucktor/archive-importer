@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/Hertucktor/archive-importer/config"
 	"github.com/Hertucktor/archive-importer/importer"
+	"github.com/Hertucktor/archive-importer/mongodb"
 	"github.com/Hertucktor/archive-importer/utils"
 )
 
@@ -15,8 +16,12 @@ func main() {
 	if err != nil {
 		logger.Fatal(err)
 	}
+	client, err := mongodb.CreateClient(conf.DBUser, conf.DBPass, conf.DBPort, conf.DBName, logger)
+	if err != nil {
+		logger.Fatal(err)
+	}
 
-	if err := importer.ImportCardsIntoDatabase(conf, page, delimiter, logger); err != nil {
+	if err = importer.ImportCardsIntoDatabase(client, conf, page, delimiter, logger); err != nil {
 		logger.Fatal(err)
 	}
 

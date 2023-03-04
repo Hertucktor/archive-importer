@@ -2,7 +2,6 @@ package importer
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/Hertucktor/archive-importer/mongodb"
 	"go.uber.org/zap"
 	"io"
@@ -11,39 +10,34 @@ import (
 )
 
 /*
-RequestAllCards receives a response with type *http.Response from
+RequestAllCardsFromAPI receives a response with type *http.Response from
 the mtg api containing 100 cards.
 Returning the response and an error
 */
-func RequestAllCards(page int, logger *zap.SugaredLogger) (mongodb.MultipleCards, error) {
+func RequestAllCardsFromAPI(page int, logger *zap.SugaredLogger) (mongodb.MultipleCards, error) {
 	var response mongodb.MultipleCards
-	var resp *http.Response
-	var err error
-	var body []byte
 	//GET request to URL with page param
-	if resp, err = http.Get("https://api.magicthegathering.io/v1/cards?page=" + strconv.Itoa(page)); err != nil {
-		logger.Error("Error: problem with http GET request\n")
-		return response, err
-	}
-
-	logger.Infof("HTTP GET REQUEST TO https://api.magicthegathering.io/v1/cards?page=\n%v", page)
-
-	defer func() {
-		if err = resp.Body.Close(); err != nil {
-			logger.Fatalf("Fatal: couldn't close response body\n")
+	apiUrl := "https://api.magicthegathering.io/v1/cards?page=" + strconv.Itoa(page)
+	apiResponse := makeRequest(apiUrl, logger)
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			logger.Error(err)
 		}
-	}()
-	//checks if there is a http status code other than 200 in the response
-	if resp.StatusCode != 200 {
-		err = errors.New("http statuscode != 200")
-		logger.Errorf("Http status code:\n%v, error:%v", resp.StatusCode, err)
-		return response, err
+	}(apiResponse.Body)
+	//TODO: repeat on !200 until response or system abort
+	if apiResponse.StatusCode != 200 {
+		//sleepTime := "2"
+		logger.Errorf("Http status code:%v", apiResponse.StatusCode)
+		//logger.Info("error in API request, sleep for: %v and repeat API request", sleepTime)
+		//time.Sleep(2 * time.Second)
 	}
 	//reads response body into []byte
-	if body, err = io.ReadAll(resp.Body); err != nil {
+	body, err := io.ReadAll(apiResponse.Body)
+	if err != nil {
 		logger.Error(err)
-		return response, err
 	}
+
 	//parses response body []byte values into response
 	if err = json.Unmarshal(body, &response); err != nil {
 		logger.Error(err)
@@ -51,4 +45,13 @@ func RequestAllCards(page int, logger *zap.SugaredLogger) (mongodb.MultipleCards
 	}
 
 	return response, err
+}
+
+func makeRequest(apiUrl string, logger *zap.SugaredLogger) *http.Response {
+	logger.Info(apiUrl)
+	resp, err := http.Get(apiUrl)
+	if err != nil {
+		logger.Fatalf("problem with http GET request\n%v", err)
+	}
+	return resp
 }

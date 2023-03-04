@@ -2,32 +2,34 @@ package mongodb
 
 import (
 	"context"
-	"github.com/Hertucktor/archive-importer/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
-	"time"
 )
 
-func CreateClient(logger *zap.SugaredLogger) (*mongo.Client, context.Context, context.CancelFunc, error) {
-	conf, err := config.GetConfig("config.yml", logger)
-	if err != nil {
-		logger.Errorf("Error: couldn't receive env vars")
-		return nil, nil, nil, err
-	}
+var ctx = context.TODO()
 
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://" + conf.DBUser + ":" + conf.DBPass + "@" + conf.DBPort + "/" + conf.DBName))
+func CreateClient(dbUser, dbPass, dbPort, dbName string, logger *zap.SugaredLogger) (*mongo.Client, error) {
+	logger.Infof("%v%v%v%v", dbUser, dbPass, dbPort, dbName)
+	clientOptions := options.Client().ApplyURI("mongodb://" + dbUser + ":" + dbPass + "@" + dbPort + "/" + dbName)
+	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		logger.Error(err)
-		return client, nil, nil, err
+		return nil, err
 	}
+	pingDB(client, logger)
+	checkDatabase(dbName, client, logger)
 
-	ctx, cancelFunc := context.WithTimeout(context.Background(), 10*time.Second)
-	err = client.Connect(ctx)
+	return client, err
+}
+
+func pingDB(client *mongo.Client, logger *zap.SugaredLogger) {
+	err := client.Ping(context.TODO(), nil)
 	if err != nil {
-		logger.Error(err)
-		return client, ctx, cancelFunc, err
+		logger.Fatal(err)
 	}
+}
 
-	return client, ctx, cancelFunc, err
+func checkDatabase(dbName string, client *mongo.Client, logger *zap.SugaredLogger) {
+	logger.Info(client.Database(dbName, nil))
 }

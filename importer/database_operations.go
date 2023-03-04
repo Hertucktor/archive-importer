@@ -16,11 +16,11 @@ func InsertImportCard(cardInfo mongodb.Card, client *mongo.Client, ctx context.C
 	cardInfo.Created = time.Now().String()
 
 	collection := client.Database(conf.DBName).Collection(conf.DBCollectionAllcards)
-	logger.Infof("Successful: connected to collection:%v", collection.Name())
+	logger.Infof("Successful: created a collection handle :%v", collection)
 
 	insertResult, err := collection.InsertOne(ctx, cardInfo)
 	if err != nil {
-		logger.Errorf("Error: couldn't insert into collection of db:\n%v", conf.DBCollectionAllcards, conf.DBName, err)
+		logger.Errorf("Couldn't insert into collection %v of db:%v\n%v", conf.DBCollectionAllcards, conf.DBName, err)
 		return err
 	}
 	logger.Infof("Success: insertion result: %v", insertResult.InsertedID)
