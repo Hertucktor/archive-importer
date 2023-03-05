@@ -3,7 +3,6 @@ package mongodb
 type MultipleCards struct {
 	Cards []Card `json:"cards"`
 }
-
 type Card struct {
 	Name          string         `json:"name,omitempty" bson:"name,omitempty"`
 	ManaCost      string         `json:"manaCost,omitempty" bson:"manaCost,omitempty"`

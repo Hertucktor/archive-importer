@@ -7,9 +7,9 @@ import (
 	"go.uber.org/zap"
 )
 
-var ctx = context.TODO()
-
 func CreateClient(dbUser, dbPass, dbPort, dbName string, logger *zap.SugaredLogger) (*mongo.Client, error) {
+	var ctx = context.TODO()
+
 	logger.Infof("%v%v%v%v", dbUser, dbPass, dbPort, dbName)
 	clientOptions := options.Client().ApplyURI("mongodb://" + dbUser + ":" + dbPass + "@" + dbPort + "/" + dbName)
 	client, err := mongo.Connect(ctx, clientOptions)
@@ -17,8 +17,6 @@ func CreateClient(dbUser, dbPass, dbPort, dbName string, logger *zap.SugaredLogg
 		logger.Error(err)
 		return nil, err
 	}
-	pingDB(client, logger)
-	checkDatabase(dbName, client, logger)
 
 	return client, err
 }

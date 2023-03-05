@@ -11,12 +11,17 @@ import (
 	"time"
 )
 
-func InsertImportCard(cardInfo mongodb.Card, client *mongo.Client, ctx context.Context, conf config.Config, logger *zap.SugaredLogger) error {
+func InsertImportCard(
+	cardInfo mongodb.Card,
+	client *mongo.Client,
+	ctx context.Context,
+	conf config.Config,
+	logger *zap.SugaredLogger) error {
+
 	cardInfo.Quantity = 1
 	cardInfo.Created = time.Now().String()
 
 	collection := client.Database(conf.DBName).Collection(conf.DBCollectionAllcards)
-	logger.Infof("Successful: created a collection handle :%v", collection)
 
 	insertResult, err := collection.InsertOne(ctx, cardInfo)
 	if err != nil {
@@ -24,27 +29,26 @@ func InsertImportCard(cardInfo mongodb.Card, client *mongo.Client, ctx context.C
 		return err
 	}
 	logger.Infof("Success: insertion result: %v", insertResult.InsertedID)
-
 	return err
 }
 
-func FindCard(setName string, number string, client *mongo.Client, ctx context.Context, conf config.Config) (bool, error) {
+func FindCard(setName string, number string, client *mongo.Client, ctx context.Context, conf config.Config, logger *zap.SugaredLogger) (bool, error) {
 	var readFilter = bson.M{"setName": setName, "number": number}
 	var card mongodb.Card
 
 	collection := client.Database(conf.DBName).Collection("allCards")
 
-	_ = collection.FindOne(ctx, readFilter).Decode(&card)
-
-	if card.Number != "" {
-		return true, nil
+	err := collection.FindOne(ctx, readFilter).Decode(&card)
+	if err != nil {
+		logger.Fatal(err)
+		return false, nil
 	}
 
-	return false, nil
+	return true, nil
 }
 
 // FIXME: update complete dataset plus modified
-func UpdateSingleCard(card mongodb.Card, setName string, number string, client *mongo.Client, ctx context.Context, conf config.Config, logger *zap.SugaredLogger) error {
+func UpdateSingleCard(setName string, number string, client *mongo.Client, ctx context.Context, conf config.Config, logger *zap.SugaredLogger) error {
 	opts := options.Update().SetUpsert(true)
 	filter := bson.M{"setName": setName, "number": number}
 	modifiedDate := time.Now().String()
